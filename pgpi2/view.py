@@ -5,7 +5,7 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver import ActionChains
 
 websites = ["https://www.cognytics.com/home?TokenID=47a29d35-8abd-406d-ba67-8ce6bfd5cc76&DashboardName=Machine%20Timeline&ShowMenu=false&ShowControlbar=false&ShowFilters=false", "https://www.cognytics.com/home?TokenID=052cd1db-78cd-47f8-8ed9-53ff8932fdd4&DashboardName=Machine%20Timeline&ShowMenu=false&ShowControlbar=false&ShowFilters=false"]
-refreshTime = (60 * 10)
+refreshTime = 10 #refresh time in minutes
 
 def writeToLog(text):
     log = open("log.log", "a")
@@ -32,6 +32,13 @@ def clickButton(driver):
         pause.seconds(1)
         clickButton(driver)
 
+def handleError(driver, currentSite):
+    try:
+        driver.get(websites[currentSite])
+    except:
+        pause.seconds(1)
+        handleError(driver, currentSite)
+
 def run():
     # clear the log on program start
     log = open("log.log", "w")
@@ -42,13 +49,21 @@ def run():
     service = webdriver.FirefoxService("/home/admin/.cargo/bin/geckodriver")
     driver = webdriver.Firefox(service=service)
     driver.fullscreen_window()
-    driver.get(websites[currentSite])
+    try:
+        driver.get(websites[currentSite])
+    except:
+        #keep trying until the address is live
+        handleError(driver, currentSite)
+
 
     while True:
         clickButton(driver)
-        pause.seconds(refreshTime)
+        pause.minutes(refreshTime)
         currentSite = (currentSite + 1) % len(websites)
-        driver.get(websites[currentSite])
+        try:
+            driver.get(websites[currentSite])
+        except:
+            handleError(driver, currentSite)
         writeToLog("Switched to site " + str(currentSite) + "\n")
 
 
